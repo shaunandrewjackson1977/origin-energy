@@ -15,10 +15,10 @@ import org.springframework.web.server.ResponseStatusException
 import java.net.URI
 
 @RestController
-@RequestMapping("/api/v1")
 class ShortenUrlController(@Autowired private val shortenUrlService: ShortenUrlService) {
-    @PostMapping("/shorten")
-    fun shortenOriginalUrl(@RequestBody @Valid request: ShortenUrlRequest): ResponseEntity<ShortenUrlResponse> {
+
+    @PostMapping("/api/v1/urls")
+    fun createShortenedUrl(@RequestBody @Valid request: ShortenUrlRequest): ResponseEntity<ShortenUrlResponse> {
         logger.info("Shorten url service request: $request")
         val slug = shortenUrlService.shorten(request.url)
         val shortenedUrl = buildShortenedUrl(slug)
@@ -26,36 +26,8 @@ class ShortenUrlController(@Autowired private val shortenUrlService: ShortenUrlS
             .also { logger.info("Shorten url service response: $it") }
     }
 
-    @GetMapping("/redirect")
-    fun redirectToOriginalUrlViaRequestParam(@RequestParam @NotBlank slug: String): ResponseEntity<Unit> {
-        return doRedirectToOriginalUrl(slug)
-    }
-
-    @GetMapping("/redirect/{slug}")
-    fun redirectToOriginalUrlViaPathVariable(@PathVariable @NotBlank slug: String): ResponseEntity<Unit> {
-        return doRedirectToOriginalUrl(slug)
-    }
-
-    @GetMapping("/shorten")
-    fun getOriginalUrlViaRequestParam(@RequestParam @NotBlank slug: String): ResponseEntity<UrlInfoResponse> {
-        return doGetOriginalUrl(slug)
-    }
-
-    @GetMapping("/shorten/{slug}")
-    fun getOriginalUrlViaPathVariable(@PathVariable @NotBlank slug: String): ResponseEntity<UrlInfoResponse> {
-        return doGetOriginalUrl(slug)
-    }
-
-    private fun doRedirectToOriginalUrl(slug: String): ResponseEntity<Unit> {
-        logger.info("Redirect url service request: $slug")
-        val urlDetails = shortenUrlService.resolve(slug) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
-        return ResponseEntity
-            .status(HttpStatus.FOUND)
-            .location(URI.create(urlDetails.originalUrl))
-            .build()
-    }
-
-    private fun doGetOriginalUrl(slug: String): ResponseEntity<UrlInfoResponse> {
+    @GetMapping("/api/v1/urls/{slug}")
+    fun getUrlInfo(@PathVariable @NotBlank slug: String): ResponseEntity<UrlInfoResponse> {
         logger.info("Get url info request: $slug")
         val urlDetails = shortenUrlService.resolve(slug) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
         return ResponseEntity
@@ -67,6 +39,16 @@ class ShortenUrlController(@Autowired private val shortenUrlService: ShortenUrlS
                     createdAt = urlDetails.createdAt
                 )
             ).also { logger.info("Get url info response: $it") }
+    }
+
+    @GetMapping("/{slug}")
+    fun redirectToOriginalUrl(@PathVariable @NotBlank slug: String): ResponseEntity<Unit> {
+        logger.info("Redirect url service request: $slug")
+        val urlDetails = shortenUrlService.resolve(slug) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
+        return ResponseEntity
+            .status(HttpStatus.FOUND)
+            .location(URI.create(urlDetails.originalUrl))
+            .build()
     }
 
     private fun buildShortenedUrl(slug: String): String = """http://short.ly/${slug}"""

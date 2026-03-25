@@ -30,7 +30,7 @@ class ShortenUrlControllerComponentTest(
             val request = objectMapper.writeValueAsString(ShortenUrlRequest(validUrl))
 
             val result = client.post()
-                .uri("/api/v1/shorten")
+                .uri("/api/v1/urls")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .exchangeSuccessfully()
@@ -52,7 +52,7 @@ class ShortenUrlControllerComponentTest(
             val request = objectMapper.writeValueAsString(ShortenUrlRequest(validUrl))
 
             val postResult = client.post()
-                .uri("/api/v1/shorten")
+                .uri("/api/v1/urls")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .exchangeSuccessfully()
@@ -66,27 +66,8 @@ class ShortenUrlControllerComponentTest(
         @Test
         fun `should return url info when slug resource valid`() {
             val getResult = client.get()
-                .uri("/api/v1/shorten/{slug}", slug)
+                .uri("/api/v1/urls/{slug}", slug)
                 .exchange()
-                .expectStatus().isOk
-                .returnResult()
-
-            val getResponse = objectMapper.readValue(String(getResult.responseBodyContent), UrlInfoResponse::class.java)
-
-            assertThat(getResponse.shortenedUrl).isEqualTo("http://short.ly/$slug")
-            assertThat(getResponse.originalUrl).isEqualTo(validUrl)
-            assertThat(getResponse.createdAt).isBefore(Instant.now())
-        }
-
-        @Test
-        fun `should return url info when slug query string parameter valid`() {
-            val getResult = client.get()
-                .uri {
-                    it
-                        .path("/api/v1/shorten")
-                        .queryParam("slug", slug)
-                        .build()
-                }.exchange()
                 .expectStatus().isOk
                 .returnResult()
 
@@ -107,7 +88,7 @@ class ShortenUrlControllerComponentTest(
             val request = objectMapper.writeValueAsString(ShortenUrlRequest(validUrl))
 
             val postResult = client.post()
-                .uri("/api/v1/shorten")
+                .uri("/api/v1/urls")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .exchangeSuccessfully()
@@ -121,22 +102,8 @@ class ShortenUrlControllerComponentTest(
         @Test
         fun `should redirect to original url when slug resource valid`() {
             client.get()
-                .uri("/api/v1/redirect/{slug}", slug)
+                .uri("/{slug}", slug)
                 .exchange()
-                .expectStatus().is3xxRedirection
-                .expectHeader().location(validUrl)
-                .expectHeader().contentLength(0)
-        }
-
-        @Test
-        fun `should redirect to original url when slug query string parameter valid`() {
-            client.get()
-                .uri {
-                    it
-                        .path("/api/v1/redirect")
-                        .queryParam("slug", slug)
-                        .build()
-                }.exchange()
                 .expectStatus().is3xxRedirection
                 .expectHeader().location(validUrl)
                 .expectHeader().contentLength(0)

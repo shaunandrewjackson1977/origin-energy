@@ -32,7 +32,7 @@ class ShortenUrlControllerTest(
             val url = "http://example.com/path with spaces"
             val request = objectMapper.writeValueAsString(ShortenUrlRequest(url))
 
-            mvc.post("/api/v1/shorten") {
+            mvc.post("/api/v1/urls") {
                 contentType = MediaType.APPLICATION_JSON
                 content = request
             }.andExpect {
@@ -44,7 +44,7 @@ class ShortenUrlControllerTest(
         fun `should return new shortened url when original url valid`() {
             val request = objectMapper.writeValueAsString(ShortenUrlRequest(validUrl))
 
-            val result = mvc.post("/api/v1/shorten") {
+            val result = mvc.post("/api/v1/urls") {
                 contentType = MediaType.APPLICATION_JSON
                 content = request
             }.andExpect {
@@ -61,7 +61,7 @@ class ShortenUrlControllerTest(
         fun `should return same slug for same original url`() {
             val request = objectMapper.writeValueAsString(ShortenUrlRequest("https://www.originenergy.com.au/internet/"))
 
-            val result = mvc.post("/api/v1/shorten") {
+            val result = mvc.post("/api/v1/urls") {
                 contentType = MediaType.APPLICATION_JSON
                 content = request
             }.andExpect {
@@ -73,7 +73,7 @@ class ShortenUrlControllerTest(
             assertThat(response.slug).isNotBlank.hasSize(7)
             assertThat(response.url).isEqualTo("http://short.ly/${response.slug}")
 
-            val idempotent = mvc.post("/api/v1/shorten") {
+            val idempotent = mvc.post("/api/v1/urls") {
                 contentType = MediaType.APPLICATION_JSON
                 content = request
             }.andExpect {
@@ -93,7 +93,7 @@ class ShortenUrlControllerTest(
         fun setUp() {
             val request = objectMapper.writeValueAsString(ShortenUrlRequest(validUrl))
 
-            val result = mvc.post("/api/v1/shorten") {
+            val result = mvc.post("/api/v1/urls") {
                 contentType = MediaType.APPLICATION_JSON
                 content = request
             }.andExpect {
@@ -106,18 +106,8 @@ class ShortenUrlControllerTest(
         }
 
         @Test
-        fun `should return bad request when shortened url slug empty`() {
-            mvc.get("/api/v1/shorten") {
-                accept(MediaType.APPLICATION_JSON)
-                param("slug", "")
-            }.andExpect {
-                status { isBadRequest() }
-            }.andReturn()
-        }
-
-        @Test
         fun `should return bad request when shortened url slug blank`() {
-            mvc.get("/api/v1/shorten/{slug}", "      ") {
+            mvc.get("/api/v1/urls/{slug}", "      ") {
                 accept(MediaType.APPLICATION_JSON)
             }.andExpect {
                 status { isBadRequest() }
@@ -126,7 +116,7 @@ class ShortenUrlControllerTest(
 
         @Test
         fun `should return not found when slug resource invalid`() {
-            mvc.get("/api/v1/shorten/{slug}", "abc1234") {
+            mvc.get("/api/v1/urls/{slug}", "abc1234") {
                 accept(MediaType.APPLICATION_JSON)
             }.andExpect {
                 status { isNotFound() }
@@ -135,7 +125,7 @@ class ShortenUrlControllerTest(
 
         @Test
         fun `should return url info when slug resource valid`() {
-            val result = mvc.get("/api/v1/shorten/{slug}", slug) {
+            val result = mvc.get("/api/v1/urls/{slug}", slug) {
                 accept(MediaType.APPLICATION_JSON)
             }.andExpect {
                 status { isOk() }
@@ -152,18 +142,8 @@ class ShortenUrlControllerTest(
     @Nested
     inner class RedirectShortUrlTests {
         @Test
-        fun `should return bad request when shortened url slug empty`() {
-            mvc.get("/api/v1/redirect") {
-                accept(MediaType.APPLICATION_JSON)
-                param("slug", "")
-            }.andExpect {
-                status { isBadRequest() }
-            }
-        }
-
-        @Test
         fun `should return bad request when shortened url slug blank`() {
-            mvc.get("/api/v1/redirect/{slug}", "       ") {
+            mvc.get("/{slug}", "       ") {
                 accept(MediaType.APPLICATION_JSON)
             }.andExpect {
                 status { isBadRequest() }
@@ -172,7 +152,7 @@ class ShortenUrlControllerTest(
 
         @Test
         fun `should return not found when shortened url slug resource invalid`() {
-            mvc.get("/api/v1/redirect/{slug}", "abc1234") {
+            mvc.get("/{slug}", "abc1234") {
                 accept(MediaType.APPLICATION_JSON)
             }.andExpect {
                 status { isNotFound() }
@@ -184,7 +164,7 @@ class ShortenUrlControllerTest(
             val url = "https://www.originenergy.com.au/internet/"
             val request = objectMapper.writeValueAsString(ShortenUrlRequest(url))
 
-            val result = mvc.post("/api/v1/shorten") {
+            val result = mvc.post("/api/v1/urls") {
                 contentType = MediaType.APPLICATION_JSON
                 content = request
             }.andExpect {
@@ -193,7 +173,7 @@ class ShortenUrlControllerTest(
 
             val response = objectMapper.readValue(result.response.contentAsString, ShortenUrlResponse::class.java)
 
-            mvc.get("/api/v1/redirect/{slug}", response.slug)
+            mvc.get("/{slug}", response.slug)
                 .andExpect {
                     status { isFound() }
                 }
