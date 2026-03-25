@@ -1,3 +1,10 @@
 spring:
   application:
     name: url-shortner-api
+  devtools:
+    add-properties: false
+
+server:
+  error:
+    include-stacktrace: never
+    include-message: never
